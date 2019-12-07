@@ -20,22 +20,71 @@
  * THE SOFTWARE.
  */
 
+
 import SpriteKit
 
-struct PhysicsType  {
-  static let none            :UInt32  =   0
-  static let player          :UInt32  =   1
-  static let wall            :UInt32  =   2
-  static let beaker          :UInt32  =   4
-  static let explosionRadius :UInt32  =   8
-  static let cat             :UInt32  =   16
-  static let zombieCat       :UInt32  =   32
-}
 
 class GameScene: SKScene {
-
-  override func didMove(to view: SKView) {
-
-  }
-  
+    
+    // MARK: - Properties
+    
+    var pinBeakerToZombieArm: SKPhysicsJointFixed?
+    var beakerReady = false
+    
+    // MARK: - Override
+    
+    override func didMove(to view: SKView) {
+        newProjectile()
+        let cloud = SKSpriteNode(imageNamed: "regularExplosion00")
+        cloud.name = "cloud"
+        cloud.setScale(0)
+        cloud.zPosition = 1
+        beaker.addChild(cloud)
+    }
+    
+    //    MARK: - Methods
+    
+    func newProjectile () {
+        let beaker = SKSpriteNode(imageNamed: "beaker")
+        beaker.name = "beaker"
+        beaker.zPosition = 5
+        beaker.position = CGPoint(x: 120, y: 625)
+        let beakerBody = SKPhysicsBody(rectangleOf: CGSize(width: 40, height: 40))
+        beakerBody.mass = 1.0
+        beakerBody.categoryBitMask = PhysicsType.beaker
+        beakerBody.collisionBitMask = PhysicsType.wall | PhysicsType.cat
+        beaker.physicsBody = beakerBody
+        addChild(beaker)
+        
+        if let armBody = childNode(withName: "player")?.childNode(withName: "arm")?.physicsBody {
+            pinBeakerToZombieArm = SKPhysicsJointFixed.joint(withBodyA: armBody, bodyB: beakerBody, anchor: CGPoint.zero)
+            physicsWorld.add(pinBeakerToZombieArm!)
+            beakerReady = true
+        }
+    }
+    
+    func tossBeaker(strength: CGVector) {
+        if beakerReady == true {
+            if let beaker = childNode(withName: "beaker") {
+                if let arm = childNode(withName: "player")?.childNode(withName: "arm") {
+                    let toss = SKAction.run() {
+                        self.physicsWorld.remove(self.pinBeakerToZombieArm!)
+                        beaker.physicsBody?.applyImpulse(strength)
+                        beaker.physicsBody?.applyAngularImpulse(0.1125)
+                        self.beakerReady = false
+                    }
+                    
+                    let followTrough = SKAction.rotate(byAngle: -6 * 3.14, duration: 2.0)
+                    
+                    arm.run(SKAction.sequence([toss, followTrough]))
+                }
+                
+                // explosion added later
+            }
+        }
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        tossBeaker(strength: CGVector(dx: 1400, dy: 1150))
+    }
 }

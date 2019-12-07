@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		43222A5A239B127700D037A5 /* PhysicsType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43222A59239B127700D037A5 /* PhysicsType.swift */; };
 		D30A182D1D2C3A0E0063F4E8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30A182C1D2C3A0E0063F4E8 /* AppDelegate.swift */; };
 		D30A18311D2C3A0E0063F4E8 /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30A18301D2C3A0E0063F4E8 /* GameScene.swift */; };
 		D30A18331D2C3A0E0063F4E8 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30A18321D2C3A0E0063F4E8 /* GameViewController.swift */; };
@@ -24,6 +25,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		43222A59239B127700D037A5 /* PhysicsType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicsType.swift; sourceTree = "<group>"; };
 		D30A18291D2C3A0E0063F4E8 /* ZombieCat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ZombieCat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D30A182C1D2C3A0E0063F4E8 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D30A18301D2C3A0E0063F4E8 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
@@ -87,6 +89,7 @@
 				D30A60A21D4B08920068692E /* iTunesArtwork@2x.png */,
 				D30A18391D2C3A0E0063F4E8 /* LaunchScreen.storyboard */,
 				D30A183C1D2C3A0E0063F4E8 /* Info.plist */,
+				43222A59239B127700D037A5 /* PhysicsType.swift */,
 			);
 			path = ZombieCat;
 			sourceTree = "<group>";
@@ -175,6 +178,7 @@
 			files = (
 				D30A18311D2C3A0E0063F4E8 /* GameScene.swift in Sources */,
 				D30A18331D2C3A0E0063F4E8 /* GameViewController.swift in Sources */,
+				43222A5A239B127700D037A5 /* PhysicsType.swift in Sources */,
 				D30A184B1D2C3A620063F4E8 /* GameOverScene.swift in Sources */,
 				D30A182D1D2C3A0E0063F4E8 /* AppDelegate.swift in Sources */,
 			);
