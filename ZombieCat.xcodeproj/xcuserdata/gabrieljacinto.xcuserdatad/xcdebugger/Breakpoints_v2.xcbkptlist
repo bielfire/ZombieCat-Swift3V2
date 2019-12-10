@@ -14,10 +14,10 @@
             filePath = "ZombieCat/GameScene.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "182"
-            endingLineNumber = "182"
-            landmarkName = "handlePan(recognizer:)"
-            landmarkType = "7">
+            startingLineNumber = "188"
+            endingLineNumber = "188"
+            landmarkName = "GameScene"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -30,9 +30,9 @@
             filePath = "ZombieCat/GameScene.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "201"
-            endingLineNumber = "201"
-            landmarkName = "updatePowerMeter(translation:)"
+            startingLineNumber = "207"
+            endingLineNumber = "207"
+            landmarkName = "handlePan(recognizer:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

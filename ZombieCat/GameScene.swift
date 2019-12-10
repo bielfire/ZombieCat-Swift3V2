@@ -38,10 +38,13 @@ class GameScene: SKScene {
     var currentPower = 100.0
     var currentAngle = 0.0
     var powerMeterNode: SKSpriteNode? = nil
+    var tocoNodeA: SKSpriteNode?
+    var tocoNodeB: SKSpriteNode?
     var powerMeterFilledNode: SKSpriteNode? = nil
     var beakersLeft = 3
     var catsRemaining = 2
-    var randomTocoPosY = CGFloat.random(in: 500.0 ..< 1000.0)
+    let randomTocoPosY = CGFloat.random(in: 500.0 ..< 1000.0)
+    let randomTocoPosX = CGFloat.random(in: 1000.0 ..< 1400.0)
     
     // MARK: - Override
     
@@ -57,7 +60,14 @@ class GameScene: SKScene {
         let panRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
         view.addGestureRecognizer(panRecognizer)
         physicsWorld.contactDelegate = self
+        
+        tocoNodeA = childNode(withName: "tocoCima") as? SKSpriteNode
+        tocoNodeA?.position.y = randomTocoPosY
+        
+        tocoNodeB = childNode(withName: "tocoBaixo") as? SKSpriteNode
+        tocoNodeB?.position.x = randomTocoPosX
     }
+
     
     //    MARK: - Methods
     
