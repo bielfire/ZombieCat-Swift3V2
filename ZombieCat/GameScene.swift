@@ -28,18 +28,34 @@ class GameScene: SKScene {
     
     // MARK: - Properties
     
+    let sleepyTexture = SKTexture(imageNamed: "cat_sleepy")
+    let scaredTexture = SKTexture(imageNamed: "cat_awake")
     var pinBeakerToZombieArm: SKPhysicsJointFixed?
     var beakerReady = false
+    var explosionTextures = [SKTexture]()
+    var previousThrowPower = 100.0
+    var previousThrowAngle = 0.0
+    var currentPower = 100.0
+    var currentAngle = 0.0
+    var powerMeterNode: SKSpriteNode? = nil
+    var powerMeterFilledNode: SKSpriteNode? = nil
+    var beakersLeft = 3
+    var catsRemaining = 2
     
     // MARK: - Override
     
     override func didMove(to view: SKView) {
         newProjectile()
-        let cloud = SKSpriteNode(imageNamed: "regularExplosion00")
-        cloud.name = "cloud"
-        cloud.setScale(0)
-        cloud.zPosition = 1
-        beaker.addChild(cloud)
+        for i in 0...8 {
+            explosionTextures.append(SKTexture(imageNamed: "regularExplosion0\(i)"))
+        }
+        
+        powerMeterNode = childNode(withName: "powerMeter") as? SKSpriteNode
+        powerMeterFilledNode = powerMeterNode?.childNode(withName: "powerMeterFilled") as? SKSpriteNode
+        
+        let panRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
+        view.addGestureRecognizer(panRecognizer)
+        physicsWorld.contactDelegate = self
     }
     
     //    MARK: - Methods
@@ -52,7 +68,7 @@ class GameScene: SKScene {
         let beakerBody = SKPhysicsBody(rectangleOf: CGSize(width: 40, height: 40))
         beakerBody.mass = 1.0
         beakerBody.categoryBitMask = PhysicsType.beaker
-        beakerBody.collisionBitMask = PhysicsType.wall | PhysicsType.cat
+        beakerBody.collisionBitMask = PhysicsType.wall | PhysicsType.cat | PhysicsType.zombieCat
         beaker.physicsBody = beakerBody
         addChild(beaker)
         
@@ -61,6 +77,25 @@ class GameScene: SKScene {
             physicsWorld.add(pinBeakerToZombieArm!)
             beakerReady = true
         }
+        
+        let cloud = SKSpriteNode(imageNamed: "regularExplosion00")
+        cloud.name = "cloud"
+        cloud.setScale(0)
+        cloud.zPosition = 1
+        beaker.addChild(cloud)
+        
+        let explosionRadius = SKSpriteNode(color: UIColor.clear, size: CGSize(width: 200, height: 200))
+        explosionRadius.name = "explosionRadius"
+        
+        let explosionRadiusBody = SKPhysicsBody(circleOfRadius: 200)
+        explosionRadiusBody.mass = 0.01
+        explosionRadiusBody.pinned = true
+        explosionRadiusBody.categoryBitMask = PhysicsType.explosionRadius
+        explosionRadiusBody.collisionBitMask = PhysicsType.none
+        explosionRadiusBody.contactTestBitMask = PhysicsType.cat
+        
+        explosionRadius.physicsBody = explosionRadiusBody
+        beaker.addChild(explosionRadius)
     }
     
     func tossBeaker(strength: CGVector) {
@@ -79,12 +114,171 @@ class GameScene: SKScene {
                     arm.run(SKAction.sequence([toss, followTrough]))
                 }
                 
-                // explosion added later
+                if let cloud = beaker.childNode(withName: "cloud"),
+                    let explosionRadius = beaker.childNode(withName: "explosionRadius") {
+                    
+                    // 1
+                    let fuse = SKAction.wait(forDuration: 4.0)
+                    let expandCloud = SKAction.scale(to: 3.5, duration: 0.25)
+                    let contractCloud = SKAction.scale(to: 0, duration: 0.25)
+                    previousThrowPower = currentPower
+                    previousThrowAngle = currentAngle
+                    
+                    // 2
+                    let removeBeaker = SKAction.run() {
+                        beaker.removeFromParent()
+                    }
+                    
+                    let animate = SKAction.animate(with: explosionTextures, timePerFrame: 0.056)
+                    
+                    let greenColor = SKColor(red: 57.0/255.0, green: 250.0/255.0, blue: 146.0/255.0, alpha: 1.0)
+                    let turnGreen = SKAction.colorize(with: greenColor, colorBlendFactor: 0.7, duration: 0.3)
+                    
+                    let zombifyContactedCat = SKAction.run() {
+                        if let physicsBody = explosionRadius.physicsBody {
+                            for contactedBody in physicsBody.allContactedBodies() {
+                                if (physicsBody.contactTestBitMask & contactedBody.categoryBitMask) != 0  ||
+                                    (contactedBody.contactTestBitMask & physicsBody.categoryBitMask) != 0  {
+                                    if let catNode = contactedBody.node as? SKSpriteNode {
+                                        catNode.texture = self.sleepyTexture
+                                    }
+                                    contactedBody.node?.run(turnGreen)
+                                    self.catsRemaining -= 1
+                                    contactedBody.categoryBitMask = PhysicsType.zombieCat
+                                }
+                            }
+                        }
+                    }
+                    
+                    let expandContractCloud = SKAction.sequence([expandCloud, zombifyContactedCat, contractCloud])
+                    let animateCloud = SKAction.group([animate, expandContractCloud])
+                    
+                    let boom = SKAction.sequence([fuse, animateCloud, removeBeaker])
+                    
+                    // 3
+                    let respawnBeakerDelay = SKAction.wait(forDuration: 1.0)
+                    let respawnBeaker = SKAction.run() {
+                        self.newProjectile()
+                    }
+                    let reload = SKAction.sequence([respawnBeakerDelay, respawnBeaker])
+                    
+                    // 4
+                    cloud.run(boom) {
+                        self.beakersLeft -= 1
+                        self.run(reload)
+                        self.updateLabels()
+                        self.checkEndGame()
+                    }
+                }
+            }
+        }
+        
+    }
+    
+    @objc func handlePan(recognizer:UIPanGestureRecognizer) {
+        if recognizer.state == UIGestureRecognizer.State.began {
+            // do any initialization here
+        }
+        
+        if recognizer.state == UIGestureRecognizer.State.changed {
+            // the position of the drag has moved
+            let translation = recognizer.translation(in: self.view)
+            updatePowerMeter(translation: translation)
+        }
+        
+        if recognizer.state == UIGestureRecognizer.State.ended {
+            // finish up
+            let maxPowerImpulse = 2500.0
+            let currentImpulse = maxPowerImpulse * currentPower/100.0
+            
+            let strength = CGVector( dx: currentImpulse * cos(currentAngle),
+                                     dy: currentImpulse * sin(currentAngle) )
+            tossBeaker(strength: strength)
+        }
+    }
+    
+    func updatePowerMeter(translation: CGPoint) {
+        // 1
+        let changeInPower = translation.x
+        let changeInAngle = translation.y
+        // 2
+        let powerScale = 2.0
+        let angleScale = -150.0
+        // 3
+        var power = Float(previousThrowPower) + Float(changeInPower) / Float(powerScale)
+        var angle = Float(previousThrowAngle) + Float(changeInAngle) / Float(angleScale)
+        // 4
+        power = min(power, 100)
+        power = max(power, 0)
+        angle = min(angle, Float(M_PI_2))
+        angle = max(angle, 0)
+        // 5
+        powerMeterFilledNode?.xScale = CGFloat(power/100.0)
+        powerMeterNode?.zRotation = CGFloat(angle)
+        // 6
+        currentPower = Double(power)
+        currentAngle = Double(angle)
+    }
+    
+    func updateLabels() {
+        if let beakerLabel = childNode(withName: "beakersLeftLabel") as? SKLabelNode {
+            beakerLabel.text = "\(beakersLeft)"
+        }
+        
+        if let catsLabel = childNode(withName: "catsRemainingLabel") as? SKLabelNode {
+            catsLabel.text = "\(catsRemaining)"
+        }
+    }
+    
+    func checkEndGame() {
+        if catsRemaining == 0 {
+            print("you win")
+            if let gameOverScene = GameOverScene(fileNamed: "GameOverScene") {
+                gameOverScene.scaleMode = scaleMode
+                gameOverScene.won = true
+                view?.presentScene(gameOverScene)
+            }
+            return
+        }
+        
+        if beakersLeft == 0 {
+            print("you lose")
+            if let gameOverScene = GameOverScene(fileNamed: "GameOverScene") {
+                gameOverScene.scaleMode = scaleMode
+                view?.presentScene(gameOverScene)
+            }
+        }
+    }    
+}
+
+// MARK: - SKPhysicsContactDelegate
+extension GameScene: SKPhysicsContactDelegate {
+    
+    func didBegin(_ contact: SKPhysicsContact) {
+        if (contact.bodyA.categoryBitMask == PhysicsType.cat) {
+            if let catNode = contact.bodyA.node as? SKSpriteNode {
+                catNode.texture = scaredTexture
+            }
+        }
+        
+        if (contact.bodyB.categoryBitMask == PhysicsType.cat) {
+            if let catNode = contact.bodyB.node as? SKSpriteNode {
+                catNode.texture = scaredTexture
             }
         }
     }
     
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        tossBeaker(strength: CGVector(dx: 1400, dy: 1150))
+    func didEnd(_ contact: SKPhysicsContact) {
+        if (contact.bodyA.categoryBitMask == PhysicsType.cat) {
+            if let catNode = contact.bodyA.node as? SKSpriteNode {
+                catNode.texture = sleepyTexture
+            }
+        }
+        
+        if (contact.bodyB.categoryBitMask == PhysicsType.cat) {
+            if let catNode = contact.bodyB.node as? SKSpriteNode {
+                catNode.texture = sleepyTexture
+            }
+        }
     }
 }
