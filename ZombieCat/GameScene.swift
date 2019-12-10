@@ -41,6 +41,7 @@ class GameScene: SKScene {
     var powerMeterFilledNode: SKSpriteNode? = nil
     var beakersLeft = 3
     var catsRemaining = 2
+    var randomTocoPosY = CGFloat.random(in: 500.0 ..< 1000.0)
     
     // MARK: - Override
     
@@ -175,7 +176,7 @@ class GameScene: SKScene {
         
     }
     
-    @objc func handlePan(recognizer:UIPanGestureRecognizer) {
+    @objc func handlePan(recognizer: UIPanGestureRecognizer) {
         if recognizer.state == UIGestureRecognizer.State.began {
             // do any initialization here
         }
